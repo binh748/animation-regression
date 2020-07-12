@@ -21,14 +21,20 @@ def get_movie_dict(link):
     global_gross = get_global_gross(soup)
     mpaa_rating = get_mpaa_rating(soup)
 
-    if country == 'Japan':
+    if country == 'Japan | USA':
+        japan_release_date = None
+        usa_release_date = get_usa_release_date(soup)
+    elif country == 'Japan':
         release_info_url = url + 'releaseinfo'
         release_info_soup = create_soup(release_info_url)
         japan_release_date = get_japan_release_date(release_info_soup)
         usa_release_date = None
-    else:
+    elif country == 'USA':
         usa_release_date = get_usa_release_date(soup)
         japan_release_date = None
+    else:
+        japan_release_date = None
+        usa_release_date = None
 
     genres = get_genres(soup)
     imdb_user_rating = get_user_rating(soup)
@@ -100,7 +106,13 @@ def get_title(soup):
 def get_country(soup):
     for element in soup.find_all('h4'):
         if 'Country:' in element:
-            return element.findNext().text
+            raw_text = element.findParent().text.strip()
+            if ('Japan' in raw_text) and ('USA' in raw_text):
+                return 'Japan | USA'
+            elif 'Japan' in raw_text:
+                return 'Japan'
+            elif 'USA' in raw_text:
+                return 'USA'
     return None
 
 
@@ -189,15 +201,14 @@ def get_oscar_wins(soup):
 
 def get_non_oscar_wins(soup):
     if soup.find('span', class_='awards-blurb'):
-        if 'Oscar' in soup.find('span', class_='awards-blurb').text:
-            if soup.find('span', class_='awards-blurb').findNextSibling():
-                raw_text = soup.find(
-                    'span', class_='awards-blurb').findNextSibling().text.strip()
-                if 'win' in raw_text:
-                    for s in raw_text.split():
-                        if s.isdigit():
-                            return int(s)
-            return None
+        if ('Oscar' in soup.find('span', class_='awards-blurb').text) and \
+                (soup.find('span', class_='awards-blurb').findNextSibling()):
+            raw_text = soup.find(
+                'span', class_='awards-blurb').findNextSibling().text.strip()
+            if 'win' in raw_text:
+                for s in raw_text.split():
+                    if s.isdigit():
+                        return int(s)
         raw_text = soup.find('span', class_='awards-blurb').text.strip()
         if 'win' in raw_text:
             for s in raw_text.split():
