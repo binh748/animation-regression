@@ -1,7 +1,21 @@
 import re
+from datetime import datetime
+import pandas as pd
 from bs4 import BeautifulSoup
 import requests
 import dateutil.parser
+from forex_python.converter import CurrencyRates
+
+
+def get_movie_df(links):
+    movie_dicts = []
+    counter = 0
+    for link in links:
+        movie_dicts.append(get_movie_dict(link))
+        counter += 1
+        print(counter)
+    movie_df = pd.DataFrame(movie_dicts)
+    return movie_df
 
 
 def get_movie_dict(link):
@@ -21,10 +35,7 @@ def get_movie_dict(link):
     global_gross = get_global_gross(soup)
     mpaa_rating = get_mpaa_rating(soup)
 
-    if country == 'Japan | USA':
-        japan_release_date = None
-        usa_release_date = get_usa_release_date(soup)
-    elif country == 'Japan':
+    if country == 'Japan':
         release_info_url = url + 'releaseinfo'
         release_info_soup = create_soup(release_info_url)
         japan_release_date = get_japan_release_date(release_info_soup)
@@ -108,18 +119,23 @@ def get_country(soup):
         if 'Country:' in element:
             raw_text = element.findParent().text.strip()
             if ('Japan' in raw_text) and ('USA' in raw_text):
-                return 'Japan | USA'
-            elif 'Japan' in raw_text:
+                return 'Japan, USA'
+            if 'Japan' in raw_text:
                 return 'Japan'
-            elif 'USA' in raw_text:
+            if 'USA' in raw_text:
                 return 'USA'
     return None
 
 
 def get_runtime(soup):
-    if soup.find('time'):
-        raw_runtime = soup.find('time').text.strip()
-        return runtime_to_minutes(raw_runtime)
+    for element in soup.find_all('h4'):
+        if 'Runtime:' in element:
+            raw_text = element.findNext().text
+            runtime = int(raw_text.split()[0])
+            return runtime
+    # if soup.find('time'):
+    #     raw_runtime = soup.find('time').text.strip()
+    #     return runtime_to_minutes(raw_runtime)
     return None
 
 
@@ -128,9 +144,9 @@ def get_budget(soup):
         raw_text = soup.find(
             text='Budget:').findParent().findParent().text.strip()
         budget = clean_budget(raw_text)
-        if 'JPY' in budget:
-            return yen_to_int(budget)
-        return dollars_to_int(budget)
+        if '$' in budget:
+            return dollars_to_int(budget)
+        return fx_to_dollars_int(budget)
     return None
 
 
@@ -164,7 +180,7 @@ def get_usa_release_date(soup):
     if soup.find(title='See more release dates'):
         raw_text = soup.find(
             title='See more release dates').text.strip().replace(' (USA)', '')
-        return to_datetime(raw_text)
+        return raw_text
     return None
 
 
@@ -193,9 +209,9 @@ def get_oscar_wins(soup):
     if soup.find('span', class_='awards-blurb'):
         if 'Won' in soup.find('span', class_='awards-blurb').text:
             raw_text = soup.find('span', class_='awards-blurb').text.strip()
-            for s in raw_text.split():
-                if s.isdigit():
-                    return int(s)
+            for string in raw_text.split():
+                if string.isdigit():
+                    return int(string)
     return None
 
 
@@ -206,14 +222,14 @@ def get_non_oscar_wins(soup):
             raw_text = soup.find(
                 'span', class_='awards-blurb').findNextSibling().text.strip()
             if 'win' in raw_text:
-                for s in raw_text.split():
-                    if s.isdigit():
-                        return int(s)
+                for string in raw_text.split():
+                    if string.isdigit():
+                        return int(string)
         raw_text = soup.find('span', class_='awards-blurb').text.strip()
         if 'win' in raw_text:
-            for s in raw_text.split():
-                if s.isdigit():
-                    return int(s)
+            for string in raw_text.split():
+                if string.isdigit():
+                    return int(string)
     return None
 
 
@@ -243,11 +259,14 @@ def clean_genres(string):
     return re.sub('\\xa0\|', ', ', string)
 
 
-def runtime_to_minutes(raw_runtime):
-    raw_runtime = raw_runtime.replace('h', '').replace('min', '')
-    runtime = raw_runtime.split()
-    minutes = int(runtime[0])*60 + int(runtime[1])
-    return minutes
+# def runtime_to_minutes(raw_runtime):
+#     raw_runtime = raw_runtime.replace('h', '').replace('min', '')
+#     runtime = raw_runtime.split()
+#     if len(runtime) == 2:
+#         minutes = int(runtime[0])*60 + int(runtime[1])
+#     else:
+#         minutes = int(runtime[0]*60)
+#     return minutes
 
 
 def to_datetime(datestring):
@@ -259,7 +278,44 @@ def dollars_to_int(dollars_string):
     return int(dollars_string)
 
 
-def yen_to_int(yen_string):
-    yen_conversion = 106.9
-    yen_string = yen_string.replace('JPY', '')
-    return round(int(yen_string) / yen_conversion)
+# def yen_to_int(yen_string):
+#     yen_conversion = 106.9
+#     yen_string = yen_string.replace('JPY', '')
+#     return round(int(yen_string) / yen_conversion)
+#
+#
+# def cad_to_int(cad_string):
+#     cad_conversion = 1.36
+#     cad_string = cad_string.replace('CAD', '')
+#     return round(int(cad_string) / cad_conversion)
+#
+#
+# def eur_to_int(eur_string):
+#     eur_conversion = .88
+#     eur_string = eur_string.replace('EUR', '')
+#     return round(int(eur_string) / eur_conversion)
+
+
+def fx_to_dollars_int(budget):
+    c = CurrencyRates()
+    jul_10_2020 = datetime(2020, 7, 10)
+    # fx_rates = {'CAD': .74, 'EUR': 1.13, 'JPY': .0094}
+    budget = c.convert(budget[:3], 'USD', int(budget[3:]), jul_10_2020)
+    return budget
+
+
+JAPAN_BASE_URL = 'https://www.imdb.com/search/title/?title_type=feature&release_date=,' \
+                 '2020-07-01&genres=animation&countries=jp&sort=release_date,desc&count=' \
+                 '100&view=simple'
+
+JAPAN_NEXT_URL = 'https://www.imdb.com/search/title/?title_type=feature&release_date=,' \
+                 '2020-07-01&genres=animation&countries=jp&view=simple&sort=release_date,' \
+                 'desc&count=100&start=101&ref_=adv_nxt'
+
+AMERICAN_BASE_URL = 'https://www.imdb.com/search/title/?title_type=feature&release_date=,' \
+                    '2020-07-01&genres=animation&countries=us&sort=release_date,desc&count=' \
+                    '100&view=simple'
+
+AMERICAN_NEXT_URL = 'https://www.imdb.com/search/title/?title_type=feature&release_date=,' \
+                    '2020-07-01&genres=animation&countries=us&view=simple&sort=release_date,' \
+                    'desc&count=100&start=101&ref_=adv_nxt'
