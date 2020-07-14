@@ -161,7 +161,7 @@ def get_global_gross(soup):
 
 
 def get_mpaa_rating(soup):
-    ratings = ['G', 'PG', 'PG-13', 'R', 'TV-PG', 'TV-MA']
+    ratings = ['G', 'PG', 'PG-13', 'R', 'TV-G', 'TV-PG', 'TV-MA']
     if soup.find('div', class_='subtext'):
         rating = soup.find('div', class_='subtext').text.strip().split()[0]
         if rating in ratings:
