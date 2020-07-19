@@ -1,3 +1,10 @@
+"""This module contains a number of functions to scrape and parse imdb.com
+and put that data into a pandas dataframe.
+
+These functions are specifically designed for scraping imdb.com. They will not
+work on other websites.
+"""
+
 import re
 from datetime import datetime
 import pandas as pd
@@ -8,6 +15,14 @@ from forex_python.converter import CurrencyRates
 
 
 def get_movie_df(links):
+    """Returns a dataframe after scraping data from a list of links.
+
+    Accepts a list of links, scrapes data for each link, puts data into
+    dicts, and converts list of dicts into a dataframe.
+
+    Args:
+        links: a list of movie title links (that are appended to imdb.com)
+    """
     movie_dicts = []
     counter = 0
     for link in links:
@@ -19,6 +34,11 @@ def get_movie_df(links):
 
 
 def get_movie_dict(link):
+    """Returns a dictionary after scraping data from a link.
+
+    Args:
+        link: a movie title link (that is appended to imdb.com)
+    """"
     base_url = 'https://www.imdb.com'
     url = base_url + link
     soup = create_soup(url)
@@ -35,13 +55,14 @@ def get_movie_dict(link):
     global_gross = get_global_gross(soup)
     mpaa_rating = get_mpaa_rating(soup)
 
+    release_info_url = url + 'releaseinfo'
+    release_info_soup = create_soup(release_info_url)
+
     if country == 'Japan':
-        release_info_url = url + 'releaseinfo'
-        release_info_soup = create_soup(release_info_url)
         japan_release_date = get_japan_release_date(release_info_soup)
         usa_release_date = None
     elif country == 'USA':
-        usa_release_date = get_usa_release_date(soup)
+        usa_release_date = get_usa_release_date(release_info_soup)
         japan_release_date = None
     else:
         japan_release_date = None
@@ -65,6 +86,17 @@ def get_movie_dict(link):
 
 
 def get_search_urls(base_url, next_url):
+    """Returns a list of URLs that correspond to imdb.com search pages.
+
+    For example, when searching for all Japanese animated films, will get a
+    search page that corresponds to films 1-100 and can click through other
+    search pages that correspond to films 101-200, 201-300, etc. This function
+    retrieves the URLs for all search pages.
+
+    Args:
+        base_url: The URL of the first search page.
+        next_url: The URL of the second search page.
+    """
     search_urls = [base_url, next_url]
     num_titles = get_num_titles(base_url)
 
@@ -75,6 +107,15 @@ def get_search_urls(base_url, next_url):
 
 
 def get_num_titles(base_url):
+    """Returns the total number of titles that correspond to a single
+    search on imdb.com.
+
+    For example, a search for all Japanese animated films may yield 1,400 titles.
+    This function returns the number of titles as an int.
+
+    Args:
+        base_url: The URL of the first search page.
+    """
     soup = create_soup(base_url)
     mini_header = soup.find('div', class_='desc').findNext().text.split()
     num_titles = int(
@@ -83,12 +124,14 @@ def get_num_titles(base_url):
 
 
 def create_soup(url):
+    """Creates a BeautifulSoup object for a given URL."""
     response_text = requests.get(url).text
     soup = BeautifulSoup(response_text, 'html5lib')
     return soup
 
 
 def create_soups(urls):
+    """Creates a list of BeautifulSoup objects for a list of URLs."""
     soups = []
     for url in urls:
         response_text = requests.get(url).text
@@ -98,16 +141,26 @@ def create_soups(urls):
 
 
 def get_title_urls(soups):
-    titles_urls = []
+    """Returns a list of movie title links (that are appended to imdb.com).
+
+    Args:
+        soups: A list of soups created from search URLs.
+    """
+    titles_links = []
     for soup in soups:
         title_spans = soup.find(
             'div', class_='lister-list').find_all('span', class_='lister-item-header')
         for element in title_spans:
-            titles_urls.append(element.find('a').get('href'))
-    return titles_urls
+            titles_links.append(element.find('a').get('href'))
+    return titles_links
 
 
 def get_title(soup):
+    """Returns the movie's title if available.
+
+    Args:
+        soup: The soup of the imdb.com webpage for that specific movie.
+    """
     if soup.find('h1'):
         raw_text = soup.find('h1').text.strip()
         return clean_title(raw_text)
@@ -115,6 +168,14 @@ def get_title(soup):
 
 
 def get_country(soup):
+        """Returns the movie's country(ies).
+
+        Only returns a specified list of countries: Japan, USA, or Japan/USA.
+        Otherwise, returns None.
+
+        Args:
+            soup: The soup of the imdb.com webpage for that specific movie.
+        """
     for element in soup.find_all('h4'):
         if 'Country:' in element:
             raw_text = element.findParent().text.strip()
@@ -128,18 +189,27 @@ def get_country(soup):
 
 
 def get_runtime(soup):
+    """Returns the movie's runtime if available.
+
+    Args:
+        soup: The soup of the imdb.com webpage for that specific movie.
+    """
     for element in soup.find_all('h4'):
         if 'Runtime:' in element:
             raw_text = element.findNext().text
             runtime = int(raw_text.split()[0])
             return runtime
-    # if soup.find('time'):
-    #     raw_runtime = soup.find('time').text.strip()
-    #     return runtime_to_minutes(raw_runtime)
     return None
 
 
 def get_budget(soup):
+    """Returns the movie's budget if available.
+
+    Any budget not denominated in USD is converted to USD.
+
+    Args:
+        soup: The soup of the imdb.com webpage for that specific movie.
+    """
     if soup.find(text='Budget:'):
         raw_text = soup.find(
             text='Budget:').findParent().findParent().text.strip()
@@ -151,6 +221,11 @@ def get_budget(soup):
 
 
 def get_global_gross(soup):
+    """Returns the movie's cumulative worldwide box office gross if available.
+
+    Args:
+        soup: The soup of the imdb.com webpage for that specific movie.
+    """
     for element in soup.find_all('h4'):
         if 'Cumulative Worldwide Gross:' in element:
             raw_text = element.findParent().text.strip()
@@ -161,7 +236,13 @@ def get_global_gross(soup):
 
 
 def get_mpaa_rating(soup):
-    ratings = ['G', 'PG', 'PG-13', 'R', 'TV-G', 'TV-PG', 'TV-MA']
+    """Returns the movie's MPAA rating if available.
+
+    Args:
+        soup: The soup of the imdb.com webpage for that specific movie.
+    """
+    ratings = ['G', 'PG', 'PG-13', 'R', 'TV-Y', 'TV-Y7', 'TV-Y7 FV',
+               'TV-G', 'TV-PG', 'TV-14' 'TV-MA']
     if soup.find('div', class_='subtext'):
         rating = soup.find('div', class_='subtext').text.strip().split()[0]
         if rating in ratings:
@@ -170,6 +251,11 @@ def get_mpaa_rating(soup):
 
 
 def get_japan_release_date(soup):
+    """Returns the movie's Japan release date if available.
+
+    Args:
+        soup: The soup of the imdb.com webpage for that specific movie.
+    """
     if soup.find(href='/calendar/?region=jp'):
         raw_text = soup.find(href='/calendar/?region=jp').findNext().text
         return to_datetime(raw_text)
@@ -177,6 +263,11 @@ def get_japan_release_date(soup):
 
 
 def get_usa_release_date(soup):
+    """Returns the movie's USA release date if available.
+
+    Args:
+        soup: The soup of the imdb.com webpage for that specific movie.
+    """
     if soup.find(title='See more release dates'):
         raw_text = soup.find(
             title='See more release dates').text.strip().replace(' (USA)', '')
@@ -185,6 +276,11 @@ def get_usa_release_date(soup):
 
 
 def get_genres(soup):
+    """Returns a string of the movie's genres if available.
+
+    Args:
+        soup: The soup of the imdb.com webpage for that specific movie.
+    """
     if soup.find(text='Genres:'):
         raw_text = soup.find(
             text='Genres:').findParent().findParent().text.strip()
@@ -193,12 +289,23 @@ def get_genres(soup):
 
 
 def get_user_rating(soup):
+    """Returns the movie's imdb.com user rating if available.
+
+    Args:
+        soup: The soup of the imdb.com webpage for that specific movie.
+    """
     if soup.find('span', itemprop='ratingValue'):
         return float(soup.find('span', itemprop='ratingValue').text)
     return None
 
 
 def get_user_rating_count(soup):
+    """Returns the movie's imdb.com user rating count (i.e. the number of user
+    ratings) if available.
+
+    Args:
+        soup: The soup of the imdb.com webpage for that specific movie.
+    """
     if soup.find(itemprop='ratingCount'):
         raw_text = soup.find(itemprop='ratingCount').text
         return int(remove_commas(raw_text))
@@ -206,6 +313,12 @@ def get_user_rating_count(soup):
 
 
 def get_oscar_wins(soup):
+    """Returns the number of Oscar (aka Academy Award) wins for a movie
+    if available.
+
+    Args:
+        soup: The soup of the imdb.com webpage for that specific movie.
+    """
     if soup.find('span', class_='awards-blurb'):
         if 'Won' in soup.find('span', class_='awards-blurb').text:
             raw_text = soup.find('span', class_='awards-blurb').text.strip()
@@ -216,6 +329,11 @@ def get_oscar_wins(soup):
 
 
 def get_non_oscar_wins(soup):
+    """Returns the number of non-Oscar wins for a movie if available.
+
+    Args:
+        soup: The soup of the imdb.com webpage for that specific movie.
+    """
     if soup.find('span', class_='awards-blurb'):
         if ('Oscar' in soup.find('span', class_='awards-blurb').text) and \
                 (soup.find('span', class_='awards-blurb').findNextSibling()):
@@ -234,6 +352,11 @@ def get_non_oscar_wins(soup):
 
 
 def get_metascore(soup):
+    """Returns the movie's metascore if available.
+
+    Args:
+        soup: The soup of the imdb.com webpage for that specific movie.
+    """
     if soup.find('div', class_='metacriticScore'):
         return int(soup.find('div', class_='metacriticScore').text.strip())
     return None
@@ -259,16 +382,6 @@ def clean_genres(string):
     return re.sub('\\xa0\|', ', ', string)
 
 
-# def runtime_to_minutes(raw_runtime):
-#     raw_runtime = raw_runtime.replace('h', '').replace('min', '')
-#     runtime = raw_runtime.split()
-#     if len(runtime) == 2:
-#         minutes = int(runtime[0])*60 + int(runtime[1])
-#     else:
-#         minutes = int(runtime[0]*60)
-#     return minutes
-
-
 def to_datetime(datestring):
     return dateutil.parser.parse(datestring)
 
@@ -278,28 +391,16 @@ def dollars_to_int(dollars_string):
     return int(dollars_string)
 
 
-# def yen_to_int(yen_string):
-#     yen_conversion = 106.9
-#     yen_string = yen_string.replace('JPY', '')
-#     return round(int(yen_string) / yen_conversion)
-#
-#
-# def cad_to_int(cad_string):
-#     cad_conversion = 1.36
-#     cad_string = cad_string.replace('CAD', '')
-#     return round(int(cad_string) / cad_conversion)
-#
-#
-# def eur_to_int(eur_string):
-#     eur_conversion = .88
-#     eur_string = eur_string.replace('EUR', '')
-#     return round(int(eur_string) / eur_conversion)
-
-
 def fx_to_dollars_int(budget):
+    """Converts a non-USD denominated budget into USD.
+
+    Accepts budget as a string and returns budget as an int denominated in USD.
+
+    Args:
+        budget: The non-USD denominated budget as a string.
+    """
     c = CurrencyRates()
     jul_10_2020 = datetime(2020, 7, 10)
-    # fx_rates = {'CAD': .74, 'EUR': 1.13, 'JPY': .0094}
     budget = c.convert(budget[:3], 'USD', int(budget[3:]), jul_10_2020)
     return budget
 

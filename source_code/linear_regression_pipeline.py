@@ -1,3 +1,5 @@
+"""This module contains a number of functions to help systematize the linear
+regression workflow."""
 import numpy as np
 from sklearn.model_selection import train_test_split, KFold, cross_validate
 from sklearn.linear_model import LinearRegression
@@ -5,24 +7,66 @@ from sklearn.metrics import mean_absolute_error
 
 
 def create_genre_encodings(df, unique_genres):
+    """Creates a column of dummy variables for each movie genre.
+
+    Args:
+        df: The dataframe that contains the column of movie genres as a single
+            string.
+        unique_genres: A list of all possible unique genres for the dataset.
+    """
     for genre in unique_genres:
         df['is_' + genre] = df.apply(
             lambda x: genre in x['genres'], axis=1).astype(int)
 
 
 def feature_target_selection(features, target, df):
+    """Returns two dataframes, each corresponding to the features and target.
+
+    Args:
+        features: A list of features for the regression.
+        target: The target for the regression, passed as a single-element list.
+
+    Returns:
+        X: A dataframe only consisting of the features.
+        y: A dataframe only consisting ot the target.
+    """
     X = df.loc[:, features]
     y = df[target]
     return X, y
 
 
 def initial_split(X, y):
+    """Splits features and target dataframes in 80/20 ratio.
+
+    Args:
+        X: A dataframe only consisting of the features.
+        y: A dataframe only consisting of the target.
+
+    Returns:
+        X_train_val: A dataframe, containing 80% of the original features data,
+            to be used for training and validation.
+        X_test: A dataframe, containing 20% of the original features data, to be
+            used for testing.
+        y_train_val: A dataframe, containing 80% of the original target data, to
+            be used for training and validation.
+        y_test: A dataframe, containing 20% of the original target data, to be
+            used for testing.
+    """
     X_train_val, X_test, y_train_val, y_test = train_test_split(
         X, y, test_size=0.2, random_state=4444)
     return X_train_val, X_test, y_train_val, y_test
 
 
 def split_and_simple_validate(X_train_val, y_train_val):
+    """Splits the data into training and validation sets in 75/25 ratio and
+    prints scores/intercept/coefficients.
+
+    Args:
+        X_train_val: A dataframe, containing 80% of the original features data,
+            to be used for training and validation.
+        y_train_val: A dataframe, containing 80% of the original target data, to
+            be used for training and validation.
+    """
     X_train, X_val, y_train, y_val = train_test_split(
         X_train_val, y_train_val, test_size=.25, random_state=4444)
 
@@ -37,7 +81,6 @@ def split_and_simple_validate(X_train_val, y_train_val):
     print(f'{"Intercept:": <30} {lr_model.intercept_[0]}')
     print('\nFeature coefficients: \n')
 
-    # For some reason, coef are in list of lists
     for feature, coef in zip(X_train_val.columns, lr_model.coef_[0]):
         print(f'{feature: <30} {coef:.2f}')
 
@@ -45,6 +88,16 @@ def split_and_simple_validate(X_train_val, y_train_val):
 
 
 def cv(X_train_val, y_train_val, cv_records):
+    """Performs 5-fold cross validation and prints training and test scores. 
+    Also adds scores to cv_records, which is a list of dicts.
+
+    Args:
+        X_train_val: A dataframe, containing 80% of the original features data,
+            to be used for training and validation.
+        y_train_val: A dataframe, containing 80% of the original target data, to
+            be used for training and validation.
+        cv_records: A list of dicts to record cross validation scores.
+    """
     lr_model = LinearRegression()
     kf = KFold(n_splits=5, shuffle=True, random_state=4444)
 
@@ -63,6 +116,17 @@ def cv(X_train_val, y_train_val, cv_records):
 
 
 def record_cv(mean_train_score, mean_val_score):
+    """Records cross validation scores with other record-keeping information
+    in a dict.
+
+    Args:
+        mean_train_score: The mean cross validation training score.
+        mean_val_score: The mean cross validation validation score.
+
+    Returns:
+        cv_dict: A dict of cross valiation scores with other record-keeping
+            information.
+    """
     cv_dict = {}
     model = input("Model: ")
     label = input("Iteration description: ")
@@ -73,7 +137,23 @@ def record_cv(mean_train_score, mean_val_score):
     return cv_dict
 
 
-def final_train_and_test(X_train_val, y_train_val, X_test, y_test):
+def final_train_and_test(X_train_val, X_test, y_train_val, y_test):
+    """Performs final training and testing of the model and prints scores/
+    intercept/coefficients.
+
+    Args:
+        X_train_val: A dataframe, containing 80% of the original features data,
+            to be used for training and validation.
+        X_test: A dataframe, containing 20% of the original features data, to be
+            used for testing.
+        y_train_val: A dataframe, containing 80% of the original target data, to
+            be used for training and validation.
+        y_test: A dataframe, containing 20% of the original target data, to be
+            used for testing.
+
+    Returns:
+        lr_model: The linear regression model (as a LinearRegression object).
+    """
     lr_model = LinearRegression()
     lr_model.fit(X_train_val, y_train_val)
 
