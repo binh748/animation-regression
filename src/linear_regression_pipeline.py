@@ -1,4 +1,4 @@
-"""This module contains a number of functions to help systematize the linear
+"""This module contains functions to help systematize the linear
 regression workflow."""
 import numpy as np
 from sklearn.model_selection import train_test_split, KFold, cross_validate
@@ -27,8 +27,8 @@ def feature_target_selection(features, target, df):
         target: The target for the regression, passed as a single-element list.
 
     Returns:
-        X: A dataframe only consisting of the features.
-        y: A dataframe only consisting ot the target.
+        X: A dataframe consisting of the features.
+        y: A dataframe consisting of the target.
     """
     X = df.loc[:, features]
     y = df[target]
@@ -39,8 +39,8 @@ def initial_split(X, y):
     """Splits features and target dataframes in 80/20 ratio.
 
     Args:
-        X: A dataframe only consisting of the features.
-        y: A dataframe only consisting of the target.
+        X: A dataframe consisting of the features.
+        y: A dataframe consisting of the target.
 
     Returns:
         X_train_val: A dataframe, containing 80% of the original features data,
