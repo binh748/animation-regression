@@ -1,4 +1,4 @@
-# Modeling Global Box Office Revenue for Japanese and American Animated Films
+# Predicting Global Box Office Revenue for Japanese and American Animated Films
 
 For my [Metis](https://www.thisismetis.com/data-science-bootcamps) regression project, I built two separate linear regression models to predict global box office revenue for American and Japanese animated films, respectively.
 
@@ -10,9 +10,9 @@ For my [Metis](https://www.thisismetis.com/data-science-bootcamps) regression pr
 
 ## Lessons Learned
 
-Both my models did not perform well as measured by mean absolute errors that were in the tens of millions of dollars. Here are the lessons that I learned, which have helped me improve my subsequent Metis projects. 
+My regression models did not perform well. The mean absolute errors for both models were in the tens of millions of dollars. This project taught me a number of lessons, which have helped me improve my subsequent Metis projects. 
 
-1. Think carefully about what data I need to scrape beforehand since re-scraping data can take a long time.
+1. Think carefully about what data I need to scrape beforehand since re-scraping data can take a long time. 
 2. Do error analysis throughout the modeling process, not at the very end.
 3. Find additional/better data sources if the data source I'm working with is inadequate.
 
