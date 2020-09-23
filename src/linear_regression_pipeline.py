@@ -88,7 +88,7 @@ def split_and_simple_validate(X_train_val, y_train_val):
 
 
 def cv(X_train_val, y_train_val, cv_records):
-    """Performs 5-fold cross validation and prints training and test scores. 
+    """Performs 5-fold cross validation and prints training and test scores.
     Also adds scores to cv_records, which is a list of dicts.
 
     Args:
