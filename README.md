@@ -10,11 +10,12 @@ For my [Metis](https://www.thisismetis.com/data-science-bootcamps) regression pr
 
 ## Lessons Learned
 
-My regression models did not perform well. The mean absolute errors for both models were in the tens of millions of dollars. This project taught me a number of lessons, which have helped me improve my subsequent Metis projects. 
+My American regression model performed okay with a test R-squared of .66, but my Japan model was a failure with a test R-squared of almost zero. This project taught me a number of lessons, which have helped me improve my subsequent Metis projects. 
 
-1. Think carefully about what data I need to scrape beforehand since re-scraping data can take a long time. 
-2. Do error analysis throughout the modeling process, not at the very end.
-3. Find additional/better data sources if the data source I'm working with is inadequate.
+1. Think carefully about what data I need to scrape beforehand since re-scraping data is time-expensive.
+2. Do residual analysis throughout the modeling process, not at the very end.
+3. Find additional/better data sources if the data source I’m working with is inadequate.
+4. Give myself enough time to work on my PowerPoint presentation and be deliberate in the design, data visualizations, and storytelling.
 
 ## Technologies
 
