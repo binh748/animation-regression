@@ -5,6 +5,7 @@ For my [Metis](https://www.thisismetis.com/data-science-bootcamps) regression pr
 ## Table of Contents
 
 * [Lessons Learned](#lessons-learned)
+* [Visualizations](#visualizations)
 * [Technologies](#technologies)
 * [Metis](#metis)
 
@@ -16,6 +17,11 @@ My American regression model performed okay with a test R-squared of .66, but my
 2. Do residual analysis throughout the modeling process, not at the very end.
 3. Find additional/better data sources if the data source I’m working with is inadequate.
 4. Give myself enough time to work on my PowerPoint presentation and be deliberate in the design, data visualizations, and storytelling.
+
+## Visualizations
+
+![japan movies largest residuals](https://user-images.githubusercontent.com/62628676/102674735-ff424400-4164-11eb-84fd-33e0c2fd2151.png)
+![u.s. movies largest residuals](https://user-images.githubusercontent.com/62628676/102674724-f5204580-4164-11eb-8fbe-c3db6b5fd95e.png)
 
 ## Technologies
 
