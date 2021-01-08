@@ -2,6 +2,8 @@
 
 For my [Metis](https://www.thisismetis.com/data-science-bootcamps) regression project, I built two separate linear regression models to predict global box office revenue for American and Japanese animated films, respectively.
 
+To learn more, see my [blog post](https://binhhoang.io/blog/animation-regression/). 
+
 ## Table of Contents
 
 * [Lessons Learned](#lessons-learned)
